@@ -1,5 +1,8 @@
 from flask import Flask,render_template,request
 import pickle     # import flask
+from web3 import Web3
+from flask import jsonify
+import json
 app = Flask(__name__)             # create an app instance
 
 @app.route("/")                   # at the end point /
@@ -27,7 +30,18 @@ def call_model():
         loaded_model = pickle.load(open(filename, 'rb'))
         prediction=loaded_model.predict(arr)
         print(prediction[0])
-        return "You suffer from " + prediction[0] +"." 
+        return "You suffer from " + prediction[0] +"."
+
+@app.route('/fetchsymptoms', methods = ['POST','GET'])
+def fetchsymptoms():
+    ganache_url = "http://127.0.0.1:8545"
+    web3 = Web3(Web3.HTTPProvider(ganache_url))
+    abi = json.loads('[ { "inputs": [ { "internalType": "bool[2]", "name": "_symptoms", "type": "bool[2]" } ], "name": "fill_symptoms", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "string", "name": "_latitude", "type": "string" }, { "internalType": "string", "name": "_longitude", "type": "string" } ], "name": "register_citizen", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "name": "citizen_array", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "citizens", "outputs": [ { "internalType": "string", "name": "latitude", "type": "string" }, { "internalType": "string", "name": "longitude", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "get_symptoms", "outputs": [ { "internalType": "bool[2]", "name": "symptoms", "type": "bool[2]" } ], "stateMutability": "view", "type": "function" } ]')
+    address=web3.toChecksumAddress("0xaB2D9BA6a13A4f25D7357705318256a0581Fa82A")
+    contract = web3.eth.contract(address=address, abi=abi)
+    web3.eth.defaultAccount = "0x76C609349aC408b7627025C61921A2cB878a695e"
+    medicines = contract.functions.get_symptoms().call()
+    return jsonify({"medicines":str(medicines)})
 
 
 
