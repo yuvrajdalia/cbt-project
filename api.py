@@ -32,7 +32,6 @@ def call_model():
                 symptoms.append(True)
             else:
                 symptoms.append(False)
-        symptoms.append(True)
         print(testcase)
         arr=[]
         arr.append(testcase)
@@ -50,9 +49,12 @@ def call_model():
 
 @app.route('/fetchsymptoms', methods = ['POST','GET'])
 def fetchsymptoms():
-    web3.eth.defaultAccount = "0x576C19590093b92aBAFFEBd60d2ED786E8393a97"
-    medicines = contract.functions.get_symptoms().call()
-    return jsonify({"medicines":str(medicines)})
+    web3.eth.defaultAccount = "0xa6D9B0B5970AEDc6c64D3a0767af7df84266F912"
+    if request.method == 'GET':
+        cities = ["Indore", "Amritsar", "Bangalore"]
+        return render_template("city.html", cities=cities)
+        # medicines = contract.functions.get_symptoms().call()
+        # return jsonify({"medicines":str(medicines)})
 
 
 

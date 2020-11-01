@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    <form name="Item_1" action="/city" method="POST">
+      <label for="exampleFormControlFile2">Choose a City</label>
+        <select name="colours">
+          {% for city in cities %}
+            <option value="{{ city }}" SELECTED>{{ city }}</option>
+          {% endfor %}     
+        </select>
+         <input type="submit" value="Submit">
+    </form>
+  </body>
+</html>
