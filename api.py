@@ -7,9 +7,11 @@ app = Flask(__name__)             # create an app instance
 
 ganache_url = "http://127.0.0.1:7545"
 web3 = Web3(Web3.HTTPProvider(ganache_url))
-abi = json.loads('[ { "constant": false, "inputs": [ { "name": "_symptoms", "type": "bool[133]" } ], "name": "fill_symptoms", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [], "name": "get_symptoms", "outputs": [ { "name": "symptoms", "type": "bool[133]" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "address" } ], "name": "citizens", "outputs": [ { "name": "latitude", "type": "string" }, { "name": "longitude", "type": "string" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "_latitude", "type": "string" }, { "name": "_longitude", "type": "string" } ], "name": "register_citizen", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "citizen_array", "outputs": [ { "name": "", "type": "address" } ], "payable": false, "stateMutability": "view", "type": "function" } ]')
-address=web3.toChecksumAddress("0xd88eBF317c7CD9EcB39EDbb79265B9facD2331e5")
+abi = json.loads('[ { "inputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "name": "citizen_array", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "citizens", "outputs": [ { "internalType": "string", "name": "city", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "count", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "string", "name": "_city", "type": "string" } ], "name": "fetchcity", "outputs": [ { "internalType": "address[]", "name": "", "type": "address[]" }, { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "bool[132]", "name": "_symptoms", "type": "bool[132]" } ], "name": "fill_symptoms", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "get_symptoms", "outputs": [ { "internalType": "bool[132]", "name": "_symptoms", "type": "bool[132]" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "string", "name": "_city", "type": "string" } ], "name": "register_citizen", "outputs": [], "stateMutability": "nonpayable", "type": "function" } ]')
+address=web3.toChecksumAddress("0x66959b4747aD49B9098E3541AA48930928f9F6c3")
 contract = web3.eth.contract(address=address, abi=abi)
+web3.eth.defaultAccount = "0xC672f1BB17B23B5422256917f1260d70A0135a18"
+
 
 @app.route("/")                   # at the end point /
 def hello():
@@ -27,11 +29,15 @@ def call_model():
         print(type(testcase[0]))
         symptoms = []
         for i in range(0,len(testcase)):
-            testcase[i]=int(testcase[i])
-            if(testcase[i] == 1):
-                symptoms.append(True)
+            if testcase[i] != '':
+                testcase[i]=int(testcase[i])
+                if(testcase[i] == 1):
+                    symptoms.append(True)
+                else:
+                    symptoms.append(False)
             else:
                 symptoms.append(False)
+                testcase[i] = 0
         print(testcase)
         arr=[]
         arr.append(testcase)
@@ -41,20 +47,35 @@ def call_model():
         loaded_model = pickle.load(open(filename, 'rb'))
         prediction=loaded_model.predict(arr)
         print(prediction[0])
-        web3.eth.defaultAccount = "0xa6D9B0B5970AEDc6c64D3a0767af7df84266F912"
         print(len(symptoms))
         print(str(symptoms))
         contract.functions.fill_symptoms(symptoms).transact()
         return "You suffer from " + prediction[0] +"."
 
-@app.route('/fetchsymptoms', methods = ['POST','GET'])
-def fetchsymptoms():
-    web3.eth.defaultAccount = "0xa6D9B0B5970AEDc6c64D3a0767af7df84266F912"
+@app.route('/geocity', methods = ['POST','GET'])
+def geocity():
     if request.method == 'GET':
         cities = ["Indore", "Amritsar", "Bangalore"]
         return render_template("city.html", cities=cities)
-        # medicines = contract.functions.get_symptoms().call()
-        # return jsonify({"medicines":str(medicines)})
+    if request.method == 'POST':
+        print(request.form.get('city'))
+        citizens, n = contract.functions.fetchcity(request.form.get('city')).call()
+        print(citizens)
+        print(n)
+        final_matrix = []
+        if n is not 0:
+            for i in range(n):
+                web3.eth.defaultAccount = citizens[i]
+                print(web3.eth.defaultAccount)
+                tmp = []
+                tmp = contract.functions.get_symptoms().call()
+                print(tmp)
+                tmp = [int(tm) for tm in tmp]
+                final_matrix.append(tmp)
+            print(final_matrix)
+            return str(final_matrix)
+        else:
+            return "No person in this city"
 
 
 
