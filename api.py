@@ -3,6 +3,22 @@ import pickle     # import flask
 from web3 import Web3
 from flask import jsonify
 import json
+import asyncio
+import io
+import glob
+import os
+import sys
+import time
+import uuid
+import requests
+import sqlite3
+from urllib.parse import urlparse
+from io import BytesIO
+from PIL import Image, ImageDraw
+from azure.cognitiveservices.vision.face import FaceClient
+from msrest.authentication import CognitiveServicesCredentials
+from azure.cognitiveservices.vision.face.models import TrainingStatusType, Person, SnapshotObjectType, OperationStatusType
+
 app = Flask(__name__)             # create an app instance
 
 ganache_url = "http://127.0.0.1:7545"
@@ -24,7 +40,39 @@ def hello():
 def call_model():
     if request.method=='POST':
         print("hit")
+        #print(request.form)
         test_dict=request.form.to_dict()
+        print(test_dict['img'])
+
+        image =open('G:\\projects\\healthcare\\images\\'+str(test_dict['img']), 'r+b')
+        print(image)
+        
+        KEY = 'bc24b9e0e54e4c96b4c59ccc5adfdea3'
+        ENDPOINT = 'https://itprojectcbt.cognitiveservices.azure.com/'  # Replace with your regional Base URLL
+        face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
+        # Detect faces
+        face_ids = []
+        faces = face_client.face.detect_with_stream(image)
+        for face in faces:
+            face_ids.append(face.face_id)
+        print("------")
+        print(face_ids)
+        print("------")
+        # Identify faces
+        results = face_client.face.identify(face_ids, 'test2')
+        if(len(results[0].candidates)==0):
+            return "You are not authorised to fill the survey"
+        # print('Identifying faces in {}'.format(os.path.basename(image.name)))
+        # if not results:
+        #     print('No person identified in the person group for faces from {}.'.format(os.path.basename(image.name)))
+        # res=0
+        # for person in results:
+        #     print(person)
+        #     print('Person for face ID {} is identified in {} with a confidence of {}.'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+        #     print(person.candidates[0].person_id)
+        #     res=person.candidates[0].person_id
+        
+        test_dict.pop('img')
         testcase=list(test_dict.values())
         print(type(testcase[0]))
         symptoms = []
@@ -49,7 +97,7 @@ def call_model():
         print(prediction[0])
         print(len(symptoms))
         print(str(symptoms))
-        contract.functions.fill_symptoms(symptoms).transact()
+        #contract.functions.fill_symptoms(symptoms).transact()
         return "You suffer from " + prediction[0] +"."
 
 @app.route('/geocity', methods = ['POST','GET'])

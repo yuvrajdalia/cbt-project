@@ -9,6 +9,8 @@
   <label >{{ symptom }}</label><br>
   <input type="text" id="fname" name={{ symptom }} ><br>
   {% endfor %}
+  <label for="img">Select image:</label>
+  <input type="file" id="img" name="img" accept="image/*">
   <input type="submit" value="Submit">
 </form> 
 
