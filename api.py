@@ -8,9 +8,9 @@ app = Flask(__name__)             # create an app instance
 ganache_url = "http://127.0.0.1:7545"
 web3 = Web3(Web3.HTTPProvider(ganache_url))
 abi = json.loads('[ { "inputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "name": "citizen_array", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "citizens", "outputs": [ { "internalType": "string", "name": "city", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "count", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "string", "name": "_city", "type": "string" } ], "name": "fetchcity", "outputs": [ { "internalType": "address[]", "name": "", "type": "address[]" }, { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "bool[132]", "name": "_symptoms", "type": "bool[132]" } ], "name": "fill_symptoms", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "get_symptoms", "outputs": [ { "internalType": "bool[132]", "name": "_symptoms", "type": "bool[132]" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "string", "name": "_city", "type": "string" } ], "name": "register_citizen", "outputs": [], "stateMutability": "nonpayable", "type": "function" } ]')
-address=web3.toChecksumAddress("0x66959b4747aD49B9098E3541AA48930928f9F6c3")
+address=web3.toChecksumAddress("0x46e12749237D9Da9547Fb3FC1A36f8bf62659a3D")
 contract = web3.eth.contract(address=address, abi=abi)
-web3.eth.defaultAccount = "0xC672f1BB17B23B5422256917f1260d70A0135a18"
+web3.eth.defaultAccount = "0xBB79dDD8bD41F2dccE960cAc18D55E42716f7D57"
 
 
 @app.route("/")                   # at the end point /
@@ -73,7 +73,10 @@ def geocity():
                 tmp = [int(tm) for tm in tmp]
                 final_matrix.append(tmp)
             print(final_matrix)
-            return str(final_matrix)
+            filename='model.sav'
+            loaded_model = pickle.load(open(filename, 'rb'))
+            predictions = loaded_model.predict(final_matrix)
+            return render_template("geocity.html", citizens=citizens, predictions = predictions, city = request.form.get('city'))
         else:
             return "No person in this city"
 
